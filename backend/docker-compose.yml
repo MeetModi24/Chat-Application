@@ -25,6 +25,7 @@ services:
     depends_on:
       - db
     environment:
+      PYTHONPATH: /app
       DATABASE_URL: ${DATABASE_URL}
       SECRET_KEY: ${SECRET_KEY}
       ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES}
