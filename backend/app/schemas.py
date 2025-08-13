@@ -1,7 +1,11 @@
 from __future__ import annotations
 import uuid
 from typing import Optional, List
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, constr
+from uuid import UUID
+import re
+
+
 
 # --- User ---
 class UserOut(BaseModel):
@@ -37,3 +41,21 @@ class MessageOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+# --- Auth ---
+class UserCreate(BaseModel):
+    email: EmailStr
+    password: str = Field(min_length=8, max_length=128)
+
+class LoginRequest(BaseModel):
+    email: EmailStr
+    password: str
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+
+class TokenPayload(BaseModel):
+    sub: str  # user_id (uuid string)
+    email: EmailStr
+    exp: int
