@@ -1,8 +1,12 @@
 import os
+import sys
 from logging.config import fileConfig
 from sqlalchemy import engine_from_config, pool
 from alembic import context
 from dotenv import load_dotenv
+
+# Add project root to sys.path so "app" is importable
+sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
 # Load .env variables
 load_dotenv()
