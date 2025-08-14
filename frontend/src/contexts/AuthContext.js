@@ -1,4 +1,5 @@
-import React, { createContext, useState, useEffect } from "react";
+// src/contexts/AuthContext.js
+import React, { createContext, useState, useEffect, useContext } from "react";
 
 export const AuthContext = createContext();
 
@@ -29,4 +30,9 @@ export const AuthProvider = ({ children }) => {
       {children}
     </AuthContext.Provider>
   );
+};
+
+// ✅ Add this hook
+export const useAuth = () => {
+  return useContext(AuthContext);
 };
