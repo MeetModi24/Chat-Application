@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from alembic import command
 from alembic.config import Config
 from .db import engine, Base, get_db
-from .routers import sessions as sessions_router
+from .routers.sessions import router as sessions_router
 from .auth.router import router as auth_router
 from .auth.deps import get_current_user
 from .ws.manager import manager
