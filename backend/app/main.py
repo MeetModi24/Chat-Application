@@ -29,7 +29,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 def run_migrations():
     """
     Run Alembic migrations programmatically to latest head.

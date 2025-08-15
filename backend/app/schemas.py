@@ -69,7 +69,7 @@ class MessageOut(BaseModel):
     id: uuid.UUID
     role: str
     content: str
-    tool_calls: Optional[List[Dict[str, Any]]] = None
+    tool_calls: Optional[Any] = None  # <-- Allow any JSON-serializable
     metadata: Optional[Dict[str, Any]] = None
     created_at: datetime
 
