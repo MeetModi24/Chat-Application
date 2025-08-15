@@ -2,7 +2,10 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { useFlash } from "../contexts/FlashContext";
-import "../styles/Login.css"; // make sure to create/import this
+import "../styles/Login.css";
+
+// Load backend base URL from env
+const API_URL = process.env.REACT_APP_API_URL;
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -11,28 +14,31 @@ export default function LoginPage() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [remember_me, setRememberMe] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     try {
-      const response = await fetch("http://127.0.0.1:5000/api/auth/signin", {
+      const response = await fetch(`${API_URL}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, remember_me }),
+        body: JSON.stringify({ email, password, remember_me: rememberMe }),
         credentials: "include",
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        await login({ name: data.user.name, email: data.user.email }, data.token);
+        await login(
+          { name: data.user?.name || "", email: data.user?.email || email },
+          data.access_token
+        );
         addFlashMessage("success", "Signed in successfully!");
-        navigate("/calendar");
+        navigate("/");
       } else {
-        addFlashMessage("danger", data.error || "Sign in failed.");
+        addFlashMessage("danger", data.detail || data.error || "Sign in failed.");
       }
     } catch (err) {
       addFlashMessage("danger", "Failed to connect to the server.");
@@ -69,6 +75,7 @@ export default function LoginPage() {
             <input
               className="form-check-input"
               type="checkbox"
+              checked={showPassword}
               onChange={() => setShowPassword(!showPassword)}
             />
             <label className="form-check-label text-success">
@@ -81,8 +88,8 @@ export default function LoginPage() {
             <input
               className="form-check-input"
               type="checkbox"
-              checked={remember_me}
-              onChange={() => setRememberMe(!remember_me)}
+              checked={rememberMe}
+              onChange={() => setRememberMe(!rememberMe)}
             />
             <label className="form-check-label">Remember Me</label>
           </div>
