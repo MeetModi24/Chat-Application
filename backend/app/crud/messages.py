@@ -1,8 +1,9 @@
-from typing import List, Optional, Tuple
+from typing import List, Optional
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
 import uuid
 from .. import models
+
 
 def create_message(
     db: Session,
@@ -13,44 +14,30 @@ def create_message(
     tool_calls: Optional[list] = None,
     metadata: Optional[dict] = None,
 ) -> models.Message:
-    m = models.Message(
+    message = models.Message(
         session_id=session_id,
         user_id=user_id,
         role=models.MessageRole(role),
         content=content,
-        tool_calls=tool_calls,
-        metadata=metadata,
+        tool_calls=tool_calls or [],
+        metadata=metadata or {},
     )
-    db.add(m)
+    db.add(message)
     db.commit()
-    db.refresh(m)
-    return m
+    db.refresh(message)
+    return message
 
-def list_messages(
-    db: Session,
-    session_id: uuid.UUID,
-    limit: int = 50,
-    offset: int = 0,
-    roles: Optional[List[str]] = None,
-    since: Optional[str] = None,
-    order_desc: bool = False,
-) -> Tuple[List[models.Message], int]:
-    """
-    Returns (messages, total_count)
-    Supports limit/offset pagination. If you want cursor pagination we can add next.
-    """
+
+def list_messages(db: Session, session_id: uuid.UUID, order_desc: bool = False) -> List[models.Message]:
+    """Return all messages for a session, ordered by created_at."""
     q = db.query(models.Message).filter(models.Message.session_id == session_id)
-    if roles:
-        enums = [models.MessageRole(r) for r in roles]
-        q = q.filter(models.Message.role.in_(enums))
-    if since:
-        # since should be ISO datetime string; rely on DB to compare strings if client passes ISO
-        from sqlalchemy import text
-        q = q.filter(models.Message.created_at >= since)
-    total = q.count()
-    if order_desc:
-        q = q.order_by(desc(models.Message.created_at))
-    else:
-        q = q.order_by(models.Message.created_at)
-    q = q.offset(offset).limit(limit)
-    return q.all(), total
+    q = q.order_by(desc(models.Message.created_at)) if order_desc else q.order_by(models.Message.created_at)
+    messages = q.all()
+
+    # Ensure tool_calls is always a list
+    for m in messages:
+        if m.tool_calls is None:
+            m.tool_calls = []
+        elif isinstance(m.tool_calls, dict):
+            m.tool_calls = [m.tool_calls]
+    return messages
