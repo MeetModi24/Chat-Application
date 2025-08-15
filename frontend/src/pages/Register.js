@@ -5,6 +5,7 @@ import "../styles/RegisterPage.css";
 export default function RegisterPage() {
   const navigate = useNavigate();
   const { addFlashMessage } = useFlash();
+  const API_URL = process.env.REACT_APP_API_URL;
 
   const [formData, setFormData] = useState({
     name: '',
@@ -48,39 +49,30 @@ export default function RegisterPage() {
     if (!validate()) return;
 
     try {
-      const response = await fetch('http://127.0.0.1:5000/api/auth/register', {
+      const response = await fetch(`${API_URL}/auth/register`, {
         method: 'POST',
-        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: formData.name,
           email: formData.email,
           password: formData.password,
+          // name is not used in backend schema, remove unless you add it to UserCreate
         }),
       });
 
-      let data;
-      try {
-        data = await response.json();
-      } catch {
-        addFlashMessage('danger', 'Invalid server response.');
-        return;
-      }
+      const data = await response.json();
 
       if (response.ok) {
-        addFlashMessage('success', data.message || 'Registration successful!');
+        addFlashMessage('success', 'Registration successful! Please log in.');
         setFormData({ name: '', email: '', password: '', confirmPassword: '' });
-
-        setTimeout(() => {
-          navigate('/calendar');
-        }, 1000);
+        navigate('/login');
       } else {
-        addFlashMessage('danger', data.error || 'Registration failed.');
+        addFlashMessage('danger', data.detail || 'Registration failed.');
       }
-    } catch {
+    } catch (err) {
       addFlashMessage('danger', 'An error occurred. Please try again.');
     }
   };
+
 
   return (
     <div className="register-page">

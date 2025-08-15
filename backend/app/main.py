@@ -1,6 +1,7 @@
 from __future__ import annotations
 import uuid
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Depends
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from alembic import command
 from alembic.config import Config
@@ -15,6 +16,18 @@ from jose import JWTError
 from .auth.utils import decode_token
 
 app = FastAPI(title="Insurge AI Backend")
+origins = [
+    "http://localhost:3000",  # React dev server
+    "http://127.0.0.1:3000",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,  # or ["*"] to allow all
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 def run_migrations():
     """
