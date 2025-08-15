@@ -7,6 +7,7 @@ from alembic.config import Config
 from .db import engine, Base, get_db
 from .routers.sessions import router as sessions_router
 from .auth.router import router as auth_router
+from .routers import messages as messages_router
 from .auth.deps import get_current_user
 from .ws.manager import manager
 from . import models
@@ -36,6 +37,7 @@ def health():
 # Routers
 app.include_router(auth_router)
 app.include_router(sessions_router)
+app.include_router(messages_router.router)
 
 # --- WebSocket with JWT: pass ?token=<JWT> on connect ---
 @app.websocket("/ws/sessions/{session_id}")
@@ -77,12 +79,33 @@ async def session_ws(websocket: WebSocket, session_id: str, db: Session = Depend
             data = await websocket.receive_json()
             role = data.get("role", "user")
             content = data.get("content", "")
-            if not content:
-                continue
+            tool_calls = data.get("tool_calls")
+            metadata = data.get("metadata")
+
+            if not content and not tool_calls:
+                continue  # skip empty messages with no tool calls
+
             from .models import MessageRole
             r = MessageRole(role) if role in {"user", "agent", "system"} else MessageRole.user
-            await manager.save_message(sid, user_id=user.id if r == MessageRole.user else None, role=r, content=content)
-            await manager.broadcast(sid, {"role": r.value, "content": content})
+
+            await manager.save_message(
+                sid,
+                user_id=user.id if r == MessageRole.user else None,
+                role=r,
+                content=content,
+                tool_calls=tool_calls,
+                metadata=metadata
+            )
+
+            await manager.broadcast(
+                sid,
+                {
+                    "role": r.value,
+                    "content": content,
+                    "tool_calls": tool_calls,
+                    "metadata": metadata
+                }
+            )
     except WebSocketDisconnect:
         await manager.disconnect(sid, websocket)
     except Exception:
