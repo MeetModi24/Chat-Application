@@ -1,0 +1,45 @@
+body {
+  background: linear-gradient(135deg, #f5f7fa, #e2ebf0);
+}
+
+.page-title {
+  font-weight: bold;
+  font-size: 2rem;
+  margin-bottom: 1.5rem;
+}
+
+.card {
+  border-radius: 15px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+}
+
+.sessions-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #e0eafc, #cfdef3); /* soft blue gradient */
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.sessions-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.sessions-page h2 {
+  color: #333;
+  font-size: 1.8rem;
+}
+
+.sessions-page .card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.sessions-page .card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+}

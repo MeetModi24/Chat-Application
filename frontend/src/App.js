@@ -6,6 +6,7 @@ import MainPage from "./pages/MainPage";
 import Chat from "./pages/Chat";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import Sessions from "./pages/Sessions";
 import { AuthProvider } from "./contexts/AuthContext";
 import { FlashProvider } from "./contexts/FlashContext";
 import FlashMessages from "./components/FlashMessages";
@@ -23,6 +24,7 @@ function App() {
             <Route path="/chat/:id" element={<Chat />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/sessions" element={<Sessions />} />
           </Routes>
         </Router>
       </FlashProvider>
