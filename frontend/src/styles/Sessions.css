@@ -18,13 +18,7 @@ body {
   box-shadow: 0 8px 20px rgba(0,0,0,0.15);
 }
 
-.sessions-page {
-  min-height: 100vh;
-  background: linear-gradient(135deg, #e0eafc, #cfdef3); /* soft blue gradient */
-  padding: 2rem;
-  display: flex;
-  flex-direction: column;
-}
+
 
 .sessions-container {
   max-width: 1200px;
@@ -42,4 +36,89 @@ body {
 .sessions-page .card:hover {
   transform: translateY(-4px);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+}
+
+.session-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer;
+}
+
+.session-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+}
+
+.create-card {
+  border-left: 4px solid #198754;
+}
+
+.text-light p {
+  opacity: 0.9;
+}
+
+img.opacity-75 {
+  opacity: 0.75;
+}
+.sessions-page {
+  min-height: 100vh;
+  padding: 40px;
+  background: url("https://www.freepik.com/premium-vector/monochrome-vector-seamless-pattern-speech-bubbles-form-oval-cloud-rectangle_45353185.htm") repeat;
+  background-size: cover;
+  background-attachment: fixed;
+  display: flex;
+  justify-content: center;
+}
+
+.sessions-container {
+  max-width: 1100px;
+  width: 100%;
+}
+
+.page-title {
+  font-weight: bold;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.sessions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+}
+
+.session-card {
+  border: none;
+  border-radius: 12px;
+  background-color: rgba(255, 255, 255, 0.9);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.session-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0px 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.sessions-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.create-session-card {
+  background: rgba(255, 255, 255, 0.95);
+  transition: transform 0.2s ease-in-out;
+}
+
+
+.session-card {
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.95);
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.session-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15) !important;
 }

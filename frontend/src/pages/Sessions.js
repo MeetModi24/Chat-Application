@@ -16,7 +16,6 @@ import { useFlash } from "../contexts/FlashContext";
 import { Plus, Trash, ChatDots } from "react-bootstrap-icons";
 import "../styles/Sessions.css";
 
-
 const Sessions = () => {
   const { token } = useContext(AuthContext);
   const { addFlashMessage } = useFlash();
@@ -79,79 +78,101 @@ const Sessions = () => {
   };
 
   return (
-    <Container className="mt-4">
-      <Row>
-        {/* Create session form */}
-        <Col md={4}>
-          <Card className="shadow-sm">
-            <Card.Body>
-              <h5 className="mb-3">Create New Session</h5>
-              <Form>
-                <Form.Group className="mb-3">
-                  <Form.Control
-                    type="text"
-                    placeholder="Enter session title..."
-                    value={newSessionName}
-                    onChange={(e) => setNewSessionName(e.target.value)}
-                  />
-                </Form.Group>
-                <Button variant="success" onClick={createSession} className="w-100">
-                  <Plus className="me-1" /> Create
-                </Button>
-              </Form>
-            </Card.Body>
-          </Card>
-        </Col>
+    <div className="sessions-page">
+      <div className="sessions-overlay"></div>
 
-        {/* Sessions list */}
-        <Col md={8}>
-          <h5 className="mb-3">My Chat Sessions</h5>
-          {loading ? (
-            <div className="text-center py-5">
-              <Spinner animation="border" />
-            </div>
-          ) : sessions.length === 0 ? (
-            <p className="text-muted">No sessions yet. Create one to start chatting!</p>
-          ) : (
-            <Row xs={1} sm={2} lg={3} className="g-3">
-              {sessions.map((s) => (
-                <Col key={s.id}>
-                  <Card
-                    className="h-100 shadow-sm session-card"
-                    style={{ cursor: "pointer" }}
-                    onClick={() => navigate(`/chat/${s.id}`)}
+      <Container className="py-5">
+        <Row className="mb-4 text-center">
+          <h2 className="fw-bold text-dark"> My Chat Sessions</h2>
+          <p className="text-muted">
+            Create and manage your personal chat sessions with ease.
+          </p>
+        </Row>
+
+        <Row className="g-4">
+          {/* Create session form */}
+          <Col md={4}>
+            <Card className="shadow-lg border-0 rounded-4 create-session-card">
+              <Card.Body>
+                <h5 className="mb-3 fw-bold text-primary">Create New Session</h5>
+                <Form>
+                  <Form.Group className="mb-3">
+                    <Form.Control
+                      type="text"
+                      placeholder="Enter session title..."
+                      value={newSessionName}
+                      onChange={(e) => setNewSessionName(e.target.value)}
+                      className="rounded-pill"
+                    />
+                  </Form.Group>
+                  <Button
+                    variant="primary"
+                    onClick={createSession}
+                    className="w-100 rounded-pill"
                   >
-                    <Card.Body className="d-flex flex-column justify-content-between">
-                      <div>
-                        <ChatDots className="text-primary me-2" size={20} />
-                        <strong>{s.title}</strong>
-                        <p className="text-muted small mb-0">
-                          Created: {dayjs(s.created_at).isValid()
-                            ? dayjs(s.created_at).format("MMM D, YYYY h:mm A")
-                            : "Unknown date"}
-                        </p>
-                      </div>
-                      <div className="text-end mt-3">
-                        <Button
-                          variant="outline-danger"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            deleteSession(s.id);
-                          }}
-                        >
-                          <Trash size={16} />
-                        </Button>
-                      </div>
-                    </Card.Body>
-                  </Card>
-                </Col>
-              ))}
-            </Row>
-          )}
-        </Col>
-      </Row>
-    </Container>
+                    <Plus className="me-1" /> Create
+                  </Button>
+                </Form>
+              </Card.Body>
+            </Card>
+          </Col>
+
+          {/* Sessions list */}
+          <Col md={8}>
+            {loading ? (
+              <div className="text-center py-5">
+                <Spinner animation="border" variant="primary" />
+              </div>
+            ) : sessions.length === 0 ? (
+              <Card className="shadow-sm border-0 p-4 text-center rounded-4">
+                <p className="text-muted mb-0">
+                  No sessions yet. Create one to start chatting!
+                </p>
+              </Card>
+            ) : (
+              <Row xs={1} sm={2} lg={3} className="g-4">
+                {sessions.map((s) => (
+                  <Col key={s.id}>
+                    <Card
+                      className="session-card shadow-lg border-0 rounded-4 h-100"
+                      onClick={() => navigate(`/chat/${s.id}`)}
+                    >
+                      <Card.Body className="d-flex flex-column justify-content-between">
+                        <div>
+                          <div className="d-flex align-items-center mb-2">
+                            <ChatDots className="text-primary me-2" size={20} />
+                            <strong>{s.title}</strong>
+                          </div>
+                          <p className="text-muted small mb-0">
+                            Created:{" "}
+                            {dayjs(s.created_at).isValid()
+                              ? dayjs(s.created_at).format("MMM D, YYYY h:mm A")
+                              : "Unknown date"}
+                          </p>
+                        </div>
+                        <div className="text-end mt-3">
+                          <Button
+                            variant="outline-danger"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              deleteSession(s.id);
+                            }}
+                            className="rounded-circle"
+                          >
+                            <Trash size={16} />
+                          </Button>
+                        </div>
+                      </Card.Body>
+                    </Card>
+                  </Col>
+                ))}
+              </Row>
+            )}
+          </Col>
+        </Row>
+      </Container>
+    </div>
   );
 };
 
