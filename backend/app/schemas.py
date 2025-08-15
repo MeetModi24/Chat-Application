@@ -5,6 +5,7 @@ from pydantic import BaseModel, EmailStr, Field, constr
 from uuid import UUID
 import re
 from datetime import datetime
+from enum import Enum
 
 
 # --- User ---
@@ -25,10 +26,11 @@ class ChatSessionUpdate(BaseModel):
 class ChatSessionOut(BaseModel):
     id: uuid.UUID
     title: str
+    owner_id: uuid.UUID
+    participants: List[SessionParticipantOut] = []
 
     class Config:
         from_attributes = True
-
 
 # --- Auth ---
 class UserCreate(BaseModel):
@@ -49,6 +51,11 @@ class TokenPayload(BaseModel):
     exp: int
 
 # --- Message ---
+class MessageRole(str, Enum):
+    user = "user"
+    agent = "agent"
+    system = "system"
+    tool = "tool"
 
 class ToolCall(BaseModel):
     """Represents a single tool interaction (example shape)."""
@@ -60,7 +67,7 @@ class ToolCall(BaseModel):
     meta: Optional[Dict[str, Any]] = None
 
 class MessageCreate(BaseModel):
-    role: str
+    role: MessageRole
     content: str
     tool_calls: Optional[List[ToolCall]] = None
     metadata: Optional[Dict[str, Any]] = None
@@ -69,9 +76,41 @@ class MessageOut(BaseModel):
     id: uuid.UUID
     role: str
     content: str
-    tool_calls: Optional[Any] = None  # <-- Allow any JSON-serializable
+    tool_calls: Optional[List[Dict[str, Any]]] = None
     metadata: Optional[Dict[str, Any]] = None
     created_at: datetime
 
     class Config:
         from_attributes = True
+
+# --- participants ---
+class SessionParticipantOut(BaseModel):
+    user_id: uuid.UUID
+    role: str
+    joined_at: datetime
+
+    class Config:
+        from_attributes = True
+
+# --- invites ---
+class InviteCreate(BaseModel):
+    emails: List[EmailStr]  # invite multiple at once
+    expires_in_hours: Optional[int] = 72  # default 3 days
+
+class InviteOut(BaseModel):
+    id: uuid.UUID
+    session_id: uuid.UUID
+    email: EmailStr
+    token: str
+    expires_at: Optional[datetime]
+    accepted_by_user_id: Optional[uuid.UUID]
+    accepted_at: Optional[datetime]
+    revoked: bool
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class InviteAcceptRequest(BaseModel):
+    token: str
+
