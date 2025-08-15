@@ -111,7 +111,7 @@ const MainPage = () => {
       </section>
 
       {/* Call To Action */}
-      <section className="cta-section text-center text-white py-5">
+      {/* <section className="cta-section text-center text-white py-5">
         <div className="overlay"></div>
         <Container>
           <h2 className="fw-bold mb-3">Ready to start your first conversation?</h2>
@@ -123,7 +123,7 @@ const MainPage = () => {
             Create Your Free Account
           </Button>
         </Container>
-      </section>
+      </section> */}
     </div>
   );
 };

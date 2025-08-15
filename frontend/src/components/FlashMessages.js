@@ -5,13 +5,11 @@ import { useFlash } from "../contexts/FlashContext";
 export default function FlashMessages() {
   const { flashMessages, removeFlashMessage } = useFlash();
 
-  // Auto-remove after 5 seconds
+  // Auto-dismiss after 3 seconds
   useEffect(() => {
     if (flashMessages.length > 0) {
-      const timers = flashMessages.map((_, index) =>
-        setTimeout(() => {
-          removeFlashMessage(index);
-        }, 5000)
+      const timers = flashMessages.map((_, idx) =>
+        setTimeout(() => removeFlashMessage(idx), 3000)
       );
       return () => timers.forEach((t) => clearTimeout(t));
     }
@@ -21,12 +19,11 @@ export default function FlashMessages() {
 
   return (
     <div
-      className="flash-container"
       style={{
         position: "fixed",
         top: 10,
         right: 10,
-        zIndex: 1000,
+        zIndex: 2000,
         maxWidth: "300px",
       }}
     >
@@ -40,7 +37,6 @@ export default function FlashMessages() {
           <button
             type="button"
             className="btn-close"
-            aria-label="Close"
             onClick={() => removeFlashMessage(idx)}
           ></button>
         </div>

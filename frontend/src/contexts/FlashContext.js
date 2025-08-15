@@ -1,4 +1,4 @@
-// src/context/FlashContext.js
+// src/contexts/FlashContext.js
 import React, { createContext, useContext, useState, useCallback } from "react";
 
 const FlashContext = createContext();
@@ -10,10 +10,16 @@ export function FlashProvider({ children }) {
     setFlashMessages((prev) => [...prev, [type, message]]);
   }, []);
 
-  return React.createElement(
-    FlashContext.Provider,
-    { value: { flashMessages, addFlashMessage } },
-    children
+  const removeFlashMessage = useCallback((index) => {
+    setFlashMessages((prev) => prev.filter((_, i) => i !== index));
+  }, []);
+
+  return (
+    <FlashContext.Provider
+      value={{ flashMessages, addFlashMessage, removeFlashMessage }}
+    >
+      {children}
+    </FlashContext.Provider>
   );
 }
 

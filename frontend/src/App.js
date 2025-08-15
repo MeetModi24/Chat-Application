@@ -6,21 +6,26 @@ import MainPage from "./pages/MainPage";
 import Chat from "./pages/Chat";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-import { AuthProvider } from "./contexts/AuthContext"; 
-import './styles/base.css';
+import { AuthProvider } from "./contexts/AuthContext";
+import { FlashProvider } from "./contexts/FlashContext";
+import FlashMessages from "./components/FlashMessages";
+import "./styles/base.css";
 
 function App() {
   return (
-    <AuthProvider>  
-      <Router>
-        <NavigationBar />
-        <Routes>
-          <Route path="/" element={<MainPage />} />
-          <Route path="/chat/:id" element={<Chat />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-        </Routes>
-      </Router>
+    <AuthProvider>
+      <FlashProvider>
+        <Router>
+          <NavigationBar />
+          <FlashMessages /> {/* Global flash messages */}
+          <Routes>
+            <Route path="/" element={<MainPage />} />
+            <Route path="/chat/:id" element={<Chat />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+          </Routes>
+        </Router>
+      </FlashProvider>
     </AuthProvider>
   );
 }
