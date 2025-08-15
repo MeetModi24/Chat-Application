@@ -15,6 +15,8 @@ from .ws.manager import manager
 from . import models
 from jose import JWTError
 from .auth.utils import decode_token
+from .crud import sessions as crud_sessions
+
 
 app = FastAPI(title="Insurge AI Backend")
 origins = [
@@ -53,7 +55,6 @@ app.include_router(user_router)
 app.include_router(sessions_router)
 app.include_router(messages_router.router)
 
-# --- WebSocket with JWT: pass ?token=<JWT> on connect ---
 @app.websocket("/ws/sessions/{session_id}")
 async def session_ws(websocket: WebSocket, session_id: str, db: Session = Depends(get_db)):
     # Expect token in query string
@@ -77,16 +78,24 @@ async def session_ws(websocket: WebSocket, session_id: str, db: Session = Depend
         await websocket.close(code=1003)
         return
 
+    # Verify user exists
     user = db.query(models.User).filter(models.User.id == uid, models.User.email == email).first()
     if not user:
         await websocket.close(code=1008)
         return
 
-    session = db.query(models.ChatSession).filter(models.ChatSession.id == sid, models.ChatSession.user_id == user.id).first()
+    # Verify session exists
+    session = db.query(models.ChatSession).filter(models.ChatSession.id == sid).first()
     if not session:
         await websocket.close(code=1008)
         return
 
+    # Verify user is a participant
+    if not crud_sessions.is_participant(db, sid, user.id):
+        await websocket.close(code=1008)
+        return
+
+    # --- WebSocket connection accepted ---
     await manager.connect(sid, websocket)
     try:
         while True:

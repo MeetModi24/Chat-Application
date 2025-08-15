@@ -73,10 +73,21 @@ def add_participant(db: Session, session_id: uuid.UUID, user_id: uuid.UUID, role
     return row
 
 def is_participant(db: Session, session_id: uuid.UUID, user_id: uuid.UUID) -> bool:
-    return db.query(models.ChatSessionParticipant)\
-        .filter(models.ChatSessionParticipant.session_id == session_id,
-                models.ChatSessionParticipant.user_id == user_id)\
-        .first() is not None
+    # Check participant table
+    if db.query(models.ChatSessionParticipant).filter(
+        models.ChatSessionParticipant.session_id == session_id,
+        models.ChatSessionParticipant.user_id == user_id
+    ).first():
+        return True
+
+    # Check if user is session owner
+    if db.query(models.ChatSession).filter(
+        models.ChatSession.id == session_id,
+        models.ChatSession.user_id == user_id
+    ).first():
+        return True
+
+    return False
 
 def list_participants(db: Session, session_id: uuid.UUID) -> List[models.ChatSessionParticipant]:
     return db.query(models.ChatSessionParticipant)\
