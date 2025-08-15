@@ -1,10 +1,10 @@
 from __future__ import annotations
 import uuid
-from typing import Optional, List
+from typing import Any, Dict, Optional, List
 from pydantic import BaseModel, EmailStr, Field, constr
 from uuid import UUID
 import re
-
+from datetime import datetime
 
 
 # --- User ---
@@ -29,18 +29,6 @@ class ChatSessionOut(BaseModel):
     class Config:
         from_attributes = True
 
-# --- Message ---
-class MessageCreate(BaseModel):
-    role: str
-    content: str
-
-class MessageOut(BaseModel):
-    id: uuid.UUID
-    role: str
-    content: str
-
-    class Config:
-        from_attributes = True
 
 # --- Auth ---
 class UserCreate(BaseModel):
@@ -59,3 +47,31 @@ class TokenPayload(BaseModel):
     sub: str  # user_id (uuid string)
     email: EmailStr
     exp: int
+
+# --- Message ---
+
+class ToolCall(BaseModel):
+    """Represents a single tool interaction (example shape)."""
+    tool: str
+    input: Optional[Dict[str, Any]] = None
+    output: Optional[Dict[str, Any]] = None
+    start_time: Optional[str] = None
+    end_time: Optional[str] = None
+    meta: Optional[Dict[str, Any]] = None
+
+class MessageCreate(BaseModel):
+    role: str
+    content: str
+    tool_calls: Optional[List[ToolCall]] = None
+    metadata: Optional[Dict[str, Any]] = None
+
+class MessageOut(BaseModel):
+    id: uuid.UUID
+    role: str
+    content: str
+    tool_calls: Optional[List[Dict[str, Any]]] = None
+    metadata: Optional[Dict[str, Any]] = None
+    created_at: datetime
+
+    class Config:
+        from_attributes = True

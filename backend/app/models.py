@@ -7,7 +7,7 @@ from typing import List, Optional
 from sqlalchemy import (
     String, Text, ForeignKey, DateTime, func, Enum, Index
 )
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .db import Base
@@ -101,6 +101,14 @@ class Message(Base):
         Enum(MessageRole, name="message_role_enum"), nullable=False
     )
     content: Mapped[str] = mapped_column(Text, nullable=False)
+
+    tool_calls: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)   # typically a list / dict
+    message_metadata: Mapped[Optional[dict]] = mapped_column(
+        "metadata",  # actual DB column name
+        JSONB,
+        nullable=True
+    )   # free-form metadata (sources, doc ids, etc.)
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

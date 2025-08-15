@@ -72,26 +72,26 @@ class ConnectionManager:
         session_id: uuid.UUID,
         user_id: uuid.UUID | None,
         role: MessageRole,
-        content: str
-    ):
-        """
-        Save a chat message to the database.
-        Uses a threadpool to avoid blocking the event loop.
-        """
-
+        content: str,
+        tool_calls: list | None = None,
+        metadata: dict | None = None
+    ) -> Message:
+        """Save a chat message to the database and return it."""
         def _save():
             db: Session = SessionLocal()
             try:
-                message = Message(
+                msg = Message(
                     session_id=session_id,
                     user_id=user_id,
                     role=role,
-                    content=content
+                    content=content,
+                    tool_calls=tool_calls,
+                    metadata=metadata
                 )
-                db.add(message)
+                db.add(msg)
                 db.commit()
-                db.refresh(message)
-                return message
+                db.refresh(msg)
+                return msg
             except Exception:
                 db.rollback()
                 raise
