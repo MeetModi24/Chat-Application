@@ -4,35 +4,57 @@ import React, { createContext, useState, useEffect, useContext } from "react";
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null); // store user object
+  const [user, setUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem("token") || "");
+  const API_URL = process.env.REACT_APP_API_URL;
 
+  // Load user info if token exists
   useEffect(() => {
     if (token) {
       localStorage.setItem("token", token);
+      fetchUserData(token);
     } else {
       localStorage.removeItem("token");
+      setUser(null);
     }
   }, [token]);
 
-  const login = (userData, jwtToken) => {
-    setUser(userData);
-    setToken(jwtToken);
+  const fetchUserData = async (jwtToken) => {
+    try {
+      const res = await fetch(`${API_URL}/users/me`, {
+        method: "GET",
+        headers: { Authorization: `Bearer ${jwtToken}` },
+      });
+      if (!res.ok) throw new Error("Failed to fetch user");
+      const data = await res.json();
+      setUser(data);
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      logout();
+    }
+  };
+
+  const login = (jwtToken) => {
+    setToken(jwtToken); // triggers fetchUserData in useEffect
   };
 
   const logout = () => {
-    setUser(null);
     setToken("");
+    setUser(null);
+    localStorage.removeItem("token");
   };
 
+  const isAuthenticated = !!token;
+
   return (
-    <AuthContext.Provider value={{ user, token, login, logout }}>
+    <AuthContext.Provider
+      value={{ user, token, login, logout, isAuthenticated }}
+    >
       {children}
     </AuthContext.Provider>
   );
 };
 
-// ✅ Add this hook
 export const useAuth = () => {
   return useContext(AuthContext);
 };

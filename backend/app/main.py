@@ -8,6 +8,7 @@ from alembic.config import Config
 from .db import engine, Base, get_db
 from .routers.sessions import router as sessions_router
 from .auth.router import router as auth_router
+from .auth.users import router as user_router
 from .routers import messages as messages_router
 from .auth.deps import get_current_user
 from .ws.manager import manager
@@ -43,12 +44,13 @@ def on_startup():
     run_migrations()
 
 
-@app.get("/health")
-def health():
-    return {"status": "ok"}
+# @app.get("/health")
+# def health():
+#     return {"status": "ok"}
 
 # Routers
 app.include_router(auth_router)
+app.include_router(user_router)
 app.include_router(sessions_router)
 app.include_router(messages_router.router)
 

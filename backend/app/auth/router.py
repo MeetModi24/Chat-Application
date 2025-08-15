@@ -6,6 +6,7 @@ from ..db import get_db
 from .. import models
 from ..schemas import UserCreate, LoginRequest, Token, UserOut
 from .utils import hash_password, verify_password, create_access_token
+from .deps import get_current_user
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 

@@ -1,13 +1,20 @@
 // src/components/NavigationBar.js
-import React, { useContext } from "react";
+import React from "react";
 import { Navbar, Nav, Container, Button } from "react-bootstrap";
 import { Link } from "react-router-dom";
-import { AuthContext } from "../contexts/AuthContext";
-import { FaHome, FaSignInAlt, FaUserPlus, FaComments, FaListAlt, FaSignOutAlt } from "react-icons/fa";
+import { useAuth } from "../contexts/AuthContext";
+import {
+  FaHome,
+  FaSignInAlt,
+  FaUserPlus,
+  FaComments,
+  FaListAlt,
+  FaSignOutAlt
+} from "react-icons/fa";
 import "../styles/Navbar.css";
 
 const NavigationBar = () => {
-  const { isAuthenticated, logout } = useContext(AuthContext);
+  const { isAuthenticated, logout } = useAuth();
 
   return (
     <Navbar bg="dark" variant="dark" expand="lg" sticky="top" className="shadow-sm">
@@ -23,7 +30,7 @@ const NavigationBar = () => {
               <FaHome className="me-1" /> Home
             </Nav.Link>
 
-            {isAuthenticated ? (
+            {isAuthenticated && (
               <>
                 <Nav.Link as={Link} to="/sessions" className="d-flex align-items-center">
                   <FaListAlt className="me-1" /> My Sessions
@@ -32,10 +39,9 @@ const NavigationBar = () => {
                   <FaComments className="me-1" /> Chat
                 </Nav.Link>
               </>
-            ) : null}
+            )}
           </Nav>
 
-          {/* Right side buttons */}
           <div className="d-flex align-items-center">
             {!isAuthenticated ? (
               <>

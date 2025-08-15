@@ -1,10 +1,10 @@
+// src/pages/LoginPage.js
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { useFlash } from "../contexts/FlashContext";
 import "../styles/Login.css";
 
-// Load backend base URL from env
 const API_URL = process.env.REACT_APP_API_URL;
 
 export default function LoginPage() {
@@ -30,15 +30,15 @@ export default function LoginPage() {
 
       const data = await response.json();
 
-      if (response.ok) {
-        await login(
-          { name: data.user?.name || "", email: data.user?.email || email },
-          data.access_token
-        );
+      if (response.ok && data.access_token) {
+        login(data.access_token); // only pass token, AuthContext fetches user
         addFlashMessage("success", "Signed in successfully!");
         navigate("/");
       } else {
-        addFlashMessage("danger", data.detail || data.error || "Sign in failed.");
+        addFlashMessage(
+          "danger",
+          data.detail || data.error || "Sign in failed."
+        );
       }
     } catch (err) {
       addFlashMessage("danger", "Failed to connect to the server.");
