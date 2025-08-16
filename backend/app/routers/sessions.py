@@ -42,6 +42,7 @@ def create_session(
     return chat_session
 
 
+
 # --- list my sessions ---
 @router.get("", response_model=List[ChatSessionOut])
 @router.get("/", response_model=List[ChatSessionOut])

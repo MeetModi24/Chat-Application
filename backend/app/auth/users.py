@@ -10,3 +10,4 @@ router = APIRouter(prefix="/users", tags=["users"])
 def read_users_me(current_user: models.User = Depends(get_current_user)):
     """Return the currently authenticated user's details."""
     return current_user
+

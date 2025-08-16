@@ -49,3 +49,4 @@ def _normalize_tool_calls(tool_calls):
     if isinstance(tool_calls, dict):
         return [tool_calls]
     return tool_calls
+

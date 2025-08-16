@@ -38,3 +38,4 @@ def decode_token(token: str) -> Dict[str, Any]:
     except JWTError:
         # Raise a clean error so routers can return 401
         raise ValueError("Invalid or expired token")
+

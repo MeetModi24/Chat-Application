@@ -11,6 +11,7 @@ from .. import models
 from ..crud import messages as crud_messages
 from ..models import Message, MessageRole
 
+
 class ConnectionManager:
     """
     Manages active WebSocket connections for chat sessions.

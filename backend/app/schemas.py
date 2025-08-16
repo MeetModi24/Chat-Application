@@ -69,7 +69,6 @@ class ChatSessionCreate(ChatSessionBase):
 class ChatSessionUpdate(BaseModel):
     title: Optional[str] = Field(default=None, max_length=255)
 
-
 class ChatSessionOut(ChatSessionBase):
     id: uuid.UUID
     created_at: datetime 

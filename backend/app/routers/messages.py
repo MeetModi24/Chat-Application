@@ -11,6 +11,7 @@ from ..auth.deps import get_current_user
 
 router = APIRouter(prefix="/sessions/{session_id}/messages", tags=["messages"])
 
+
 def _require_participant(db: Session, session_id: uuid.UUID, user_id: uuid.UUID) -> models.ChatSession:
     """Ensure that the given user is a participant in the chat session."""
     session = db.query(models.ChatSession).filter(models.ChatSession.id == session_id).first()

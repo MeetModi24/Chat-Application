@@ -37,3 +37,4 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)):
 
     token = create_access_token(subject=str(user.id), email=user.email)
     return {"access_token": token, "token_type": "bearer"}
+

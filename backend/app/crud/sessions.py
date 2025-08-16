@@ -173,3 +173,4 @@ def revoke_invite(db: Session, invite_id: uuid.UUID, session_id: uuid.UUID):
         db.commit()
         db.refresh(inv)
     return inv
+

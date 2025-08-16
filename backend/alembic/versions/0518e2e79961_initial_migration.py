@@ -108,3 +108,4 @@ def downgrade():
     op.drop_table('chat_sessions')
 
     op.drop_table('users')
+
