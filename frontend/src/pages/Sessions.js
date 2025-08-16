@@ -52,7 +52,7 @@ const Sessions = () => {
     }
     try {
       await axios.post(
-        `${API_URL}/sessions`,
+        `${API_URL}/sessions/`,
         { title: newSessionName },
         { headers: { Authorization: `Bearer ${token}` } }
       );

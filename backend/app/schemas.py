@@ -1,64 +1,93 @@
 from __future__ import annotations
 import uuid
-from typing import Any, Dict, Optional, List
-from pydantic import BaseModel, EmailStr, Field, constr
-from uuid import UUID
-import re
+from typing import Any, Dict, List, Optional
 from datetime import datetime
 from enum import Enum
 
+from pydantic import BaseModel, EmailStr, Field
 
-# --- User ---
-class UserOut(BaseModel):
-    id: uuid.UUID
+
+# ============================================================
+# Base Config for ORM Models
+# ============================================================
+
+class ORMBase(BaseModel):
+    """Base schema enabling Pydantic ORM mode."""
+    class Config:
+        from_attributes = True  # Allows converting from SQLAlchemy models
+
+
+# ============================================================
+# User Schemas
+# ============================================================
+
+class UserBase(ORMBase):
     email: EmailStr
 
-    class Config:
-        from_attributes = True
 
-# --- Chat Session ---
-class ChatSessionCreate(BaseModel):
-    title: str = Field(default="Untitled Session", max_length=255)
-
-class ChatSessionUpdate(BaseModel):
-    title: Optional[str] = Field(default=None, max_length=255)
-
-class ChatSessionOut(BaseModel):
-    id: uuid.UUID
-    title: str
-    owner_id: uuid.UUID
-    participants: List[SessionParticipantOut] = []
-
-    class Config:
-        from_attributes = True
-
-# --- Auth ---
 class UserCreate(BaseModel):
     email: EmailStr
-    password: str = Field(min_length=8, max_length=128)
+    password: str = Field(..., min_length=8, max_length=128)
+
+
+class UserOut(UserBase):
+    id: uuid.UUID
+
+
+# ============================================================
+# Authentication Schemas
+# ============================================================
 
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str
 
+
 class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"
 
-class TokenPayload(BaseModel):
-    sub: str  # user_id (uuid string)
-    email: EmailStr
-    exp: int
 
-# --- Message ---
+class TokenPayload(BaseModel):
+    sub: str  # user ID in string format
+    email: EmailStr
+    exp: int  # Unix timestamp for expiry
+
+
+# ============================================================
+# Chat Session Schemas
+# ============================================================
+
+class ChatSessionBase(ORMBase):
+    title: str = Field(default="Untitled Session", max_length=255)
+
+
+class ChatSessionCreate(ChatSessionBase):
+    pass
+
+
+class ChatSessionUpdate(BaseModel):
+    title: Optional[str] = Field(default=None, max_length=255)
+
+
+class ChatSessionOut(ChatSessionBase):
+    id: uuid.UUID
+    created_at: datetime 
+    # Optional: Include participants or owner if needed later
+
+
+# ============================================================
+# Message Schemas
+# ============================================================
+
 class MessageRole(str, Enum):
     user = "user"
     agent = "agent"
     system = "system"
     tool = "tool"
 
+
 class ToolCall(BaseModel):
-    """Represents a single tool interaction (example shape)."""
     tool: str
     input: Optional[Dict[str, Any]] = None
     output: Optional[Dict[str, Any]] = None
@@ -66,38 +95,41 @@ class ToolCall(BaseModel):
     end_time: Optional[str] = None
     meta: Optional[Dict[str, Any]] = None
 
+
 class MessageCreate(BaseModel):
     role: MessageRole
     content: str
     tool_calls: Optional[List[ToolCall]] = None
-    metadata: Optional[Dict[str, Any]] = None
+    tool_metadata: Optional[Dict[str, Any]] = None  # renamed
 
-class MessageOut(BaseModel):
+class MessageOut(ORMBase):
     id: uuid.UUID
-    role: str
+    role: MessageRole
     content: str
     tool_calls: Optional[List[Dict[str, Any]]] = None
-    metadata: Optional[Dict[str, Any]] = None
+    tool_metadata: Optional[Dict[str, Any]] = None  # renamed
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+# ============================================================
+# Participant Schemas
+# ============================================================
 
-# --- participants ---
-class SessionParticipantOut(BaseModel):
+class SessionParticipantOut(ORMBase):
     user_id: uuid.UUID
     role: str
     joined_at: datetime
 
-    class Config:
-        from_attributes = True
 
-# --- invites ---
+# ============================================================
+# Invite Schemas
+# ============================================================
+
 class InviteCreate(BaseModel):
-    emails: List[EmailStr]  # invite multiple at once
-    expires_in_hours: Optional[int] = 72  # default 3 days
+    emails: List[EmailStr]
+    expires_in_hours: int = Field(default=72, ge=1, le=720)  # default 3 days
 
-class InviteOut(BaseModel):
+
+class InviteOut(ORMBase):
     id: uuid.UUID
     session_id: uuid.UUID
     email: EmailStr
@@ -108,9 +140,6 @@ class InviteOut(BaseModel):
     revoked: bool
     created_at: datetime
 
-    class Config:
-        from_attributes = True
 
 class InviteAcceptRequest(BaseModel):
     token: str
-

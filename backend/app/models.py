@@ -35,7 +35,7 @@ class User(Base):
         back_populates="owner", cascade="all, delete-orphan"
     )
     messages: Mapped[List["Message"]] = relationship(
-        back_populates="user"
+        back_populates="user", cascade="all, delete-orphan"
     )
     participant_sessions: Mapped[List["ChatSessionParticipant"]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
@@ -98,7 +98,7 @@ class ChatSessionParticipant(Base):
         ForeignKey("users.id", ondelete="CASCADE"),
         primary_key=True
     )
-    role: Mapped[str] = mapped_column(String, default="member")  # 'owner'|'member'|'moderator'
+    role: Mapped[str] = mapped_column(String, default="member")
     joined_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
@@ -178,9 +178,7 @@ class Message(Base):
     content: Mapped[str] = mapped_column(Text, nullable=False)
 
     tool_calls: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
-    message_metadata: Mapped[Optional[dict]] = mapped_column(
-        "metadata", JSONB, nullable=True
-    )
+    tool_metadata: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)  # renamed from metadata
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False

@@ -30,6 +30,7 @@ services:
       SECRET_KEY: ${SECRET_KEY}
       ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES}
       ENV: ${ENV}
+      FRONTEND_URL: http://localhost:3000
 
 volumes:
   postgres_data:

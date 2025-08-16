@@ -30,6 +30,7 @@ def _require_participant(db: Session, session_id: uuid.UUID, user_id: uuid.UUID)
 
 
 # --- create session (owner is also participant) ---
+# @router.post("", response_model=ChatSessionOut, status_code=status.HTTP_201_CREATED)
 @router.post("/", response_model=ChatSessionOut, status_code=status.HTTP_201_CREATED)
 def create_session(
     payload: ChatSessionCreate,
@@ -37,12 +38,13 @@ def create_session(
     user: models.User = Depends(get_current_user),
 ):
     chat_session = crud_sessions.create_session(db, user_id=user.id, title=payload.title)
-    crud_sessions.add_owner_as_participant(db, chat_session.id, user.id)
+    # crud_sessions.add_owner_as_participant(db, chat_session.id, user.id)
     return chat_session
 
 
 # --- list my sessions ---
-@router.get("/", response_model=list[ChatSessionOut])
+@router.get("", response_model=List[ChatSessionOut])
+@router.get("/", response_model=List[ChatSessionOut])
 def list_my_sessions(
     db: Session = Depends(get_db),
     user: models.User = Depends(get_current_user),

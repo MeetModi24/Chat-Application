@@ -27,7 +27,7 @@ export default function Chat() {
   const { token, user } = useContext(AuthContext);
   const { addFlashMessage } = useFlash();
 
-  const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8000";
+  const API_URL = process.env.REACT_APP_API_URL;
   const WS_ORIGIN = useMemo(() => buildWsUrl(API_URL), [API_URL]);
 
   const [messages, setMessages] = useState([]);
