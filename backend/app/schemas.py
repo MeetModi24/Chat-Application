@@ -72,6 +72,7 @@ class ChatSessionUpdate(BaseModel):
 class ChatSessionOut(ChatSessionBase):
     id: uuid.UUID
     created_at: datetime 
+    user_id: uuid.UUID     # add owner
     # Optional: Include participants or owner if needed later
 
 
@@ -108,15 +109,20 @@ class MessageOut(ORMBase):
     tool_calls: Optional[List[Dict[str, Any]]] = None
     tool_metadata: Optional[Dict[str, Any]] = None  # renamed
     created_at: datetime
-
 # ============================================================
 # Participant Schemas
 # ============================================================
 
 class SessionParticipantOut(ORMBase):
+    session_id: uuid.UUID 
     user_id: uuid.UUID
     role: str
-    joined_at: datetime
+    joined_at: datetime    
+
+class SessionParticipantCreate(BaseModel):
+    session_id: uuid.UUID
+    user_id: uuid.UUID
+    role: str = "member"
 
 
 # ============================================================
@@ -124,8 +130,10 @@ class SessionParticipantOut(ORMBase):
 # ============================================================
 
 class InviteCreate(BaseModel):
-    emails: List[EmailStr]
-    expires_in_hours: int = Field(default=72, ge=1, le=720)  # default 3 days
+    email: EmailStr   # ✅ fixed plural -> singular
+    expires_in_hours: Optional[int] = Field(
+        default=72, ge=1, le=720
+    )  # allow None for "no expiry"
 
 
 class InviteOut(ORMBase):
@@ -138,6 +146,7 @@ class InviteOut(ORMBase):
     accepted_at: Optional[datetime]
     revoked: bool
     created_at: datetime
+    created_by_user_id: Optional[uuid.UUID]
 
 
 class InviteAcceptRequest(BaseModel):

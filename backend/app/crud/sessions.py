@@ -9,36 +9,58 @@ from sqlalchemy.exc import IntegrityError
 
 from .. import models
 
+# ============================================================
+# Participants CRUD
+# ============================================================
 
-# --- Participants ---
 def add_owner_as_participant(db: Session, session_id: uuid.UUID, owner_id: uuid.UUID):
-    row = models.ChatSessionParticipant(session_id=session_id, user_id=owner_id, role="owner")
-    db.add(row)
-    db.commit()
-    db.refresh(row)
-    return row
-
-
-def add_participant(db: Session, session_id: uuid.UUID, user_id: uuid.UUID, role: str = "member"):
-    row = models.ChatSessionParticipant(session_id=session_id, user_id=user_id, role=role)
+    """Ensure session owner is added as participant with role=owner"""
+    row = models.ChatSessionParticipant(
+        session_id=session_id,
+        user_id=owner_id,
+        role="owner"
+    )
     db.add(row)
     try:
         db.commit()
         db.refresh(row)
     except IntegrityError:
-        db.rollback()  # Already a participant
+        db.rollback()
+        row = db.query(models.ChatSessionParticipant).filter_by(
+            session_id=session_id, user_id=owner_id
+        ).first()
+    return row
+
+
+def add_participant(db: Session, session_id: uuid.UUID, user_id: uuid.UUID, role: str = "member"):
+    """Add a participant, default role=member. Handles duplicate gracefully."""
+    row = models.ChatSessionParticipant(
+        session_id=session_id,
+        user_id=user_id,
+        role=role
+    )
+    db.add(row)
+    try:
+        db.commit()
+        db.refresh(row)
+    except IntegrityError:
+        db.rollback()  # already a participant
+        row = db.query(models.ChatSessionParticipant).filter_by(
+            session_id=session_id, user_id=user_id
+        ).first()
     return row
 
 
 def is_participant(db: Session, session_id: uuid.UUID, user_id: uuid.UUID) -> bool:
-    # Check participant table
+    """Check if a user is a participant or the owner of the session"""
+    # Direct participant
     if db.query(models.ChatSessionParticipant).filter(
         models.ChatSessionParticipant.session_id == session_id,
         models.ChatSessionParticipant.user_id == user_id
     ).first():
         return True
 
-    # Check if user is session owner
+    # Session owner
     if db.query(models.ChatSession).filter(
         models.ChatSession.id == session_id,
         models.ChatSession.user_id == user_id
@@ -49,12 +71,14 @@ def is_participant(db: Session, session_id: uuid.UUID, user_id: uuid.UUID) -> bo
 
 
 def list_participants(db: Session, session_id: uuid.UUID) -> List[models.ChatSessionParticipant]:
+    """Return all participants of a session, ordered by join time"""
     return (
         db.query(models.ChatSessionParticipant)
         .filter(models.ChatSessionParticipant.session_id == session_id)
         .order_by(models.ChatSessionParticipant.joined_at)
         .all()
     )
+
 
 
 # --- Sessions ---
@@ -107,7 +131,10 @@ def delete_session(db: Session, chat_session: models.ChatSession) -> None:
     db.commit()
 
 
-# --- Invites ---
+# ============================================================
+# Invites CRUD
+# ============================================================
+
 def _invite_token() -> str:
     return secrets.token_urlsafe(32)
 
@@ -117,14 +144,19 @@ def create_invites(
     session_id: uuid.UUID,
     emails: List[str],
     created_by: uuid.UUID,
-    expires_in_hours: int = 72
+    expires_in_hours: Optional[int] = 72,
 ) -> List[models.ChatInvite]:
-    expires_at = datetime.now(timezone.utc) + timedelta(hours=expires_in_hours) if expires_in_hours else None
+    """Create invites for given emails, skipping existing active ones"""
+    expires_at = (
+        datetime.now(timezone.utc) + timedelta(hours=expires_in_hours)
+        if expires_in_hours else None
+    )
     out = []
 
     existing = {
-        i.email for i in db.query(models.ChatInvite)
-        .filter(models.ChatInvite.session_id == session_id, models.ChatInvite.revoked == False)
+        i.email.lower() for i in db.query(models.ChatInvite)
+        .filter(models.ChatInvite.session_id == session_id,
+                models.ChatInvite.revoked == False)
         .all()
     }
 
@@ -149,21 +181,32 @@ def create_invites(
 
 
 def get_invite_by_token(db: Session, token: str) -> Optional[models.ChatInvite]:
+    """Retrieve invite by its token"""
     return db.query(models.ChatInvite).filter(models.ChatInvite.token == token).first()
 
 
 def accept_invite(db: Session, invite: models.ChatInvite, user_id: uuid.UUID):
+    """Accept invite if not expired or revoked, link to user"""
+    if invite.revoked:
+        raise ValueError("Invite has been revoked")
     if invite.expires_at and invite.expires_at < datetime.now(timezone.utc):
         raise ValueError("Invite expired")
+
     invite.accepted_by_user_id = user_id
     invite.accepted_at = datetime.now(timezone.utc)
+
     db.add(invite)
     db.commit()
     db.refresh(invite)
+
+    # Add user as participant
+    add_participant(db, invite.session_id, user_id)
+
     return invite
 
 
 def revoke_invite(db: Session, invite_id: uuid.UUID, session_id: uuid.UUID):
+    """Mark invite as revoked"""
     inv = db.query(models.ChatInvite).filter(
         models.ChatInvite.id == invite_id,
         models.ChatInvite.session_id == session_id
@@ -173,4 +216,3 @@ def revoke_invite(db: Session, invite_id: uuid.UUID, session_id: uuid.UUID):
         db.commit()
         db.refresh(inv)
     return inv
-
