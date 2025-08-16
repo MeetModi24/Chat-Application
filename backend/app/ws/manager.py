@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from ..db import SessionLocal
 from .. import models
 from ..crud import messages as crud_messages
-
+from ..models import Message, MessageRole
 
 class ConnectionManager:
     """
@@ -68,34 +68,30 @@ class ConnectionManager:
         self,
         session_id: uuid.UUID,
         user_id: uuid.UUID | None,
-        role: models.MessageRole | str,
-        content: str,
-        tool_calls: list | None = None,
-        tool_metadata: dict | None = None
-    ) -> models.Message:
-        """Save a chat message to the database using CRUD and return it."""
+        role: MessageRole,
+        content: str
+    ):
+        """
+        Save a chat message to the database.
+        Uses a threadpool to avoid blocking the event loop.
+        """
 
         def _save():
             db: Session = SessionLocal()
             try:
-                # Validate role
-                role_str = str(role)
-                if role_str not in models.MessageRole._value2member_map_:
-                    raise ValueError(f"Invalid role: {role_str}")
-
-                # Normalize tool_calls and tool_metadata
-                tool_calls_norm = crud_messages._normalize_tool_calls(tool_calls)
-                tool_metadata_norm = tool_metadata or {}
-
-                return crud_messages.create_message(
-                    db=db,
+                message = Message(
                     session_id=session_id,
-                    user_id=user_id if role_str == "user" else None,
-                    role=role_str,
-                    content=content,
-                    tool_calls=tool_calls_norm,
-                    tool_metadata=tool_metadata_norm,
+                    user_id=user_id,
+                    role=role,
+                    content=content
                 )
+                db.add(message)
+                db.commit()
+                db.refresh(message)
+                return message
+            except Exception:
+                db.rollback()
+                raise
             finally:
                 db.close()
 

@@ -59,81 +59,49 @@ app.include_router(messages_router.router)
 # -------------------- WebSocket --------------------
 @app.websocket("/ws/sessions/{session_id}")
 async def session_ws(websocket: WebSocket, session_id: str, db: Session = Depends(get_db)):
+    # Expect token in query string
     token = websocket.query_params.get("token")
     if not token:
-        await websocket.close(code=1008)
+        await websocket.close(code=1008)  # policy violation
         return
 
     try:
         claims = decode_token(token)
-        user_id = claims.get("sub")
-        email = claims.get("email")
-        sid = uuid.UUID(session_id)
-        uid = uuid.UUID(user_id)
-    except (JWTError, ValueError):
+    except JWTError:
         await websocket.close(code=1008)
         return
 
-    # Verify user exists
+    user_id = claims.get("sub")
+    email = claims.get("email")
+    try:
+        sid = uuid.UUID(session_id)
+        uid = uuid.UUID(user_id)
+    except Exception:
+        await websocket.close(code=1003)
+        return
+
     user = db.query(models.User).filter(models.User.id == uid, models.User.email == email).first()
     if not user:
         await websocket.close(code=1008)
         return
 
-    # Verify session exists
-    session = db.query(models.ChatSession).filter(models.ChatSession.id == sid).first()
+    session = db.query(models.ChatSession).filter(models.ChatSession.id == sid, models.ChatSession.user_id == user.id).first()
     if not session:
         await websocket.close(code=1008)
         return
 
-    # Verify user is a participant
-    if not crud_sessions.is_participant(db, sid, user.id):
-        await websocket.close(code=1008)
-        return
-
-    # Accept WebSocket connection
     await manager.connect(sid, websocket)
-
     try:
         while True:
             data = await websocket.receive_json()
             role = data.get("role", "user")
             content = data.get("content", "")
-            tool_calls = data.get("tool_calls")
-            tool_metadata = data.get("tool_metadata")
-
-            if not content and not tool_calls:
+            if not content:
                 continue
-
-            # Use PyEnum for role
             from .models import MessageRole
-            r = MessageRole(role) if role in MessageRole._value2member_map_ else MessageRole.user
-
-            # Normalize tool_calls
-            from .crud import messages as crud_messages
-            tool_calls_norm = crud_messages._normalize_tool_calls(tool_calls)
-
-            msg = await manager.save_message(
-                sid,
-                user_id=user.id if r == MessageRole.user else None,
-                role=r,
-                content=content,
-                tool_calls=tool_calls_norm,
-                tool_metadata=tool_metadata
-            )
-
-            # Broadcast to all session participants
-            await manager.broadcast(
-                sid,
-                {
-                    "id": str(msg.id),
-                    "role": r.value,
-                    "content": content,
-                    "tool_calls": tool_calls_norm,
-                    "tool_metadata": tool_metadata or {},
-                    "created_at": msg.created_at.isoformat()
-                }
-            )
+            r = MessageRole(role) if role in {"user", "agent", "system"} else MessageRole.user
+            await manager.save_message(sid, user_id=user.id if r == MessageRole.user else None, role=r, content=content)
+            await manager.broadcast(sid, {"role": r.value, "content": content})
     except WebSocketDisconnect:
         await manager.disconnect(sid, websocket)
     except Exception:
