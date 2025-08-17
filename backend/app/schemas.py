@@ -147,6 +147,9 @@ class InviteOut(ORMBase):
     revoked: bool
     created_at: datetime
     created_by_user_id: Optional[uuid.UUID]
+     # Extra fields for frontend
+    inviter_email: Optional[str]
+    session_name: Optional[str]
 
 
 class InviteAcceptRequest(BaseModel):

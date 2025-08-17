@@ -7,13 +7,14 @@ import {
   Form,
   Card,
   Spinner,
+  Modal,
 } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import dayjs from "dayjs";
 import { AuthContext } from "../contexts/AuthContext";
 import { useFlash } from "../contexts/FlashContext";
-import { Plus, Trash, ChatDots } from "react-bootstrap-icons";
+import { Plus, Trash, ChatDots, PersonPlus } from "react-bootstrap-icons";
 import "../styles/Sessions.css";
 
 const Sessions = () => {
@@ -24,6 +25,11 @@ const Sessions = () => {
   const [sessions, setSessions] = useState([]);
   const [newSessionName, setNewSessionName] = useState("");
   const [loading, setLoading] = useState(true);
+  const [inviteLinks, setInviteLinks] = useState({});
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [selectedSessionId, setSelectedSessionId] = useState(null);
+
   const API_URL = process.env.REACT_APP_API_URL;
 
   useEffect(() => {
@@ -74,6 +80,40 @@ const Sessions = () => {
       fetchSessions();
     } catch (err) {
       addFlashMessage("danger", "Error deleting session.");
+    }
+  };
+
+  const handleInviteClick = (sessionId) => {
+    setSelectedSessionId(sessionId);
+    setInviteEmail("");
+    setShowInviteModal(true);
+  };
+
+  const sendInvite = async () => {
+    if (!inviteEmail.trim()) {
+      addFlashMessage("warning", "Please enter an email.");
+      return;
+    }
+
+    try {
+      const res = await axios.post(
+        `${API_URL}/sessions/${selectedSessionId}/invites`,
+        { email: inviteEmail },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      const invite = res.data;
+      const inviteLink = `${window.location.origin}/accept-invite/${invite.token}`;
+
+      setInviteLinks((prev) => ({
+        ...prev,
+        [selectedSessionId]: inviteLink,
+      }));
+
+      addFlashMessage("success", "Invite sent!");
+      setShowInviteModal(false);
+    } catch (err) {
+      addFlashMessage("danger", "Error sending invite.");
     }
   };
 
@@ -143,14 +183,40 @@ const Sessions = () => {
                             <ChatDots className="text-primary me-2" size={20} />
                             <strong>{s.title}</strong>
                           </div>
-                          <p className="text-muted small mb-0">
+                          <p className="text-muted small mb-2">
                             Created:{" "}
                             {dayjs(s.created_at).isValid()
                               ? dayjs(s.created_at).format("MMM D, YYYY h:mm A")
                               : "Unknown date"}
                           </p>
+
+                          {inviteLinks[s.id] && (
+                            <div className="invite-link mt-2">
+                              <small className="text-success">
+                                Invite:{" "}
+                                <a
+                                  href={inviteLinks[s.id]}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                >
+                                  {inviteLinks[s.id]}
+                                </a>
+                              </small>
+                            </div>
+                          )}
                         </div>
-                        <div className="text-end mt-3">
+                        <div className="d-flex justify-content-between mt-3">
+                          <Button
+                            variant="outline-primary"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleInviteClick(s.id);
+                            }}
+                            className="rounded-circle"
+                          >
+                            <PersonPlus size={16} />
+                          </Button>
                           <Button
                             variant="outline-danger"
                             size="sm"
@@ -172,6 +238,32 @@ const Sessions = () => {
           </Col>
         </Row>
       </Container>
+
+      {/* Invite Modal */}
+      <Modal show={showInviteModal} onHide={() => setShowInviteModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Invite User by Email</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form.Group>
+            <Form.Label>Email</Form.Label>
+            <Form.Control
+              type="email"
+              placeholder="Enter user's email"
+              value={inviteEmail}
+              onChange={(e) => setInviteEmail(e.target.value)}
+            />
+          </Form.Group>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowInviteModal(false)}>
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={sendInvite}>
+            Send Invite
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 };

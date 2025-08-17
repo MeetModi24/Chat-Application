@@ -6,6 +6,8 @@ from typing import List, Optional
 
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import aliased
+
 
 from .. import models
 from sqlalchemy import or_
@@ -218,18 +220,53 @@ def revoke_invite(db: Session, invite_id: uuid.UUID, session_id: uuid.UUID):
         db.refresh(inv)
     return inv
 
-def list_user_invites(db: Session, email: str) -> List[models.ChatInvite]:
-    return (
-        db.query(models.ChatInvite)
+
+def list_user_invites(db: Session, email: str) -> list[dict]:
+    """
+    Get pending invites for `email`, enriched with inviter_email and session_name.
+    Returns plain dicts that match InviteOut.
+    """
+    Inviter = aliased(models.User)
+
+    rows = (
+        db.query(
+            models.ChatInvite,
+            models.ChatSession.title.label("session_name"),
+            Inviter.email.label("inviter_email"),
+        )
+        .join(models.ChatSession, models.ChatInvite.session_id == models.ChatSession.id)
+        .outerjoin(Inviter, models.ChatInvite.created_by_user_id == Inviter.id)
         .filter(
             models.ChatInvite.email == email,
             models.ChatInvite.revoked.is_(False),
             models.ChatInvite.accepted_at.is_(None),
             or_(
                 models.ChatInvite.expires_at.is_(None),
-                models.ChatInvite.expires_at > datetime.now(timezone.utc)
-            )
+                models.ChatInvite.expires_at > datetime.now(timezone.utc),
+            ),
         )
-
+        .order_by(models.ChatInvite.created_at.desc())
         .all()
     )
+
+    invites: list[dict] = []
+    for inv, session_name, inviter_email in rows:
+        invites.append(
+            {
+                "id": inv.id,
+                "session_id": inv.session_id,
+                "email": inv.email,
+                "token": inv.token,
+                "expires_at": inv.expires_at,
+                "accepted_by_user_id": inv.accepted_by_user_id,
+                "accepted_at": inv.accepted_at,
+                "revoked": inv.revoked,
+                "created_at": inv.created_at,
+                "created_by_user_id": inv.created_by_user_id,
+                # enriched fields
+                "inviter_email": inviter_email,
+                "session_name": session_name,
+            }
+        )
+
+    return invites
