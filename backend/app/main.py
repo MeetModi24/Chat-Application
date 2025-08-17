@@ -60,10 +60,9 @@ app.include_router(messages_router.router)
 # -------------------- WebSocket --------------------
 @app.websocket("/ws/sessions/{session_id}")
 async def session_ws(websocket: WebSocket, session_id: str, db: Session = Depends(get_db)):
-    # Expect token in query string
     token = websocket.query_params.get("token")
     if not token:
-        await websocket.close(code=1008)  # policy violation
+        await websocket.close(code=1008)
         return
 
     try:
@@ -72,22 +71,29 @@ async def session_ws(websocket: WebSocket, session_id: str, db: Session = Depend
         await websocket.close(code=1008)
         return
 
-    user_id = claims.get("sub")
+    user_id_str = claims.get("sub")
     email = claims.get("email")
     try:
         sid = uuid.UUID(session_id)
-        uid = uuid.UUID(user_id)
+        uid = uuid.UUID(user_id_str)
     except Exception:
-        await websocket.close(code=1003)
+        await websocket.close(code=1003)  # unsupported data / bad IDs
         return
 
-    user = db.query(models.User).filter(models.User.id == uid, models.User.email == email).first()
+    user = db.query(models.User).filter(
+        models.User.id == uid, models.User.email == email
+    ).first()
     if not user:
         await websocket.close(code=1008)
         return
 
-    session = db.query(models.ChatSession).filter(models.ChatSession.id == sid, models.ChatSession.user_id == user.id).first()
-    if not session:
+    # ✅ Allow owner or any participant
+    session_exists = db.query(models.ChatSession).filter(models.ChatSession.id == sid).first()
+    if not session_exists:
+        await websocket.close(code=1008)
+        return
+
+    if not crud_sessions.is_participant(db, sid, uid):
         await websocket.close(code=1008)
         return
 
@@ -99,9 +105,18 @@ async def session_ws(websocket: WebSocket, session_id: str, db: Session = Depend
             content = data.get("content", "")
             if not content:
                 continue
+
             from .models import MessageRole
-            r = MessageRole(role) if role in {"user", "agent", "system"} else MessageRole.user
-            await manager.save_message(sid, user_id=user.id if r == MessageRole.user else None, role=r, content=content)
+            # (optional) allow all MessageRole values including "tool"
+            allowed = {"user", "agent", "system", "tool"}
+            r = MessageRole(role) if role in allowed else MessageRole.user
+
+            await manager.save_message(
+                sid,
+                user_id=user.id if r == MessageRole.user else None,
+                role=r,
+                content=content,
+            )
             await manager.broadcast(sid, {"role": r.value, "content": content})
     except WebSocketDisconnect:
         await manager.disconnect(sid, websocket)
