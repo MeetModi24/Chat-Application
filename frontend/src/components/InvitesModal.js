@@ -17,17 +17,17 @@ export default function InvitesModal({ show, onClose }) {
   const [invites, setInvites] = useState([]);
   const [error, setError] = useState(null);
 
+  // 🔹 Load invites when modal opens
   useEffect(() => {
     if (!show) return;
     setLoading(true);
     setError(null);
 
     axios
-      .get(`${API_URL}/sessions/invites`, {
+      .get(`${API_URL}/sessions/me/invites`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => {
-        // Ensure invites is always an array
         setInvites(Array.isArray(res.data) ? res.data : []);
       })
       .catch((err) => {
@@ -42,36 +42,40 @@ export default function InvitesModal({ show, onClose }) {
       .finally(() => setLoading(false));
   }, [show, token, addFlashMessage]);
 
-  const respondToInvite = (inviteId, status) => {
+  // 🔹 Accept invite (backend expects token, not ID)
+  const acceptInvite = (invite) => {
     axios
       .post(
-        `${API_URL}/sessions/invites/${inviteId}/respond`,
-        { status },
+        `${API_URL}/sessions/invites/accept`,
+        { token: invite.token },
         { headers: { Authorization: `Bearer ${token}` } }
       )
       .then(() => {
-        setInvites((prev) => prev.filter((inv) => inv.id !== inviteId));
-        addFlashMessage(
-          "success",
-          status === "accepted"
-            ? "Invitation accepted — opening session..."
-            : "Invitation declined"
-        );
-
-        if (status === "accepted") {
-          const invite = invites.find((i) => i.id === inviteId);
-          if (invite) {
-            window.location.href = `/chat/${invite.session_id}`;
-          }
-        }
+        setInvites((prev) => prev.filter((inv) => inv.id !== invite.id));
+        addFlashMessage("success", "Invitation accepted — opening session...");
+        window.location.href = `/chat/${invite.session_id}`;
       })
       .catch((err) => {
-        const errData = err.response?.data;
-        const msg =
-          typeof errData?.detail === "string"
-            ? errData.detail
-            : errData?.detail?.msg || err.message;
-        addFlashMessage("danger", `Error updating invitation: ${msg}`);
+        const msg = err.response?.data?.detail || err.message;
+        addFlashMessage("danger", `Error accepting invite: ${msg}`);
+      });
+  };
+
+  // 🔹 Decline invite (revoke endpoint)
+  const declineInvite = (invite) => {
+    axios
+      .post(
+        `${API_URL}/sessions/${invite.session_id}/invites/${invite.id}/revoke`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      )
+      .then(() => {
+        setInvites((prev) => prev.filter((inv) => inv.id !== invite.id));
+        addFlashMessage("info", "Invitation declined");
+      })
+      .catch((err) => {
+        const msg = err.response?.data?.detail || err.message;
+        addFlashMessage("danger", `Error declining invite: ${msg}`);
       });
   };
 
@@ -120,14 +124,14 @@ export default function InvitesModal({ show, onClose }) {
                   variant="success"
                   size="sm"
                   className="me-2"
-                  onClick={() => respondToInvite(inv.id, "accepted")}
+                  onClick={() => acceptInvite(inv)}
                 >
                   Accept
                 </Button>
                 <Button
                   variant="outline-danger"
                   size="sm"
-                  onClick={() => respondToInvite(inv.id, "declined")}
+                  onClick={() => declineInvite(inv)}
                 >
                   Decline
                 </Button>
