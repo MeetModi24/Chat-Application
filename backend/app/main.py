@@ -17,6 +17,7 @@ from .auth.utils import decode_token
 from .crud import sessions as crud_sessions
 from .ws.manager import manager
 from . import models
+from datetime import timedelta, datetime, timezone
 
 app = FastAPI(title="Insurge AI Backend")
 
@@ -117,7 +118,17 @@ async def session_ws(websocket: WebSocket, session_id: str, db: Session = Depend
                 role=r,
                 content=content,
             )
-            await manager.broadcast(sid, {"role": r.value, "content": content})
+            await manager.broadcast(
+                sid,
+                {
+                    "role": r.value,
+                    "content": content,
+                    "user_id": str(user.id) if r == MessageRole.user else None,
+                    "username": user.username if r == MessageRole.user else None,
+                    "created_at": datetime.now(timezone.utc).isoformat()
+                }
+            )
+
     except WebSocketDisconnect:
         await manager.disconnect(sid, websocket)
     except Exception:

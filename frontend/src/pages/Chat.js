@@ -82,12 +82,13 @@ export default function Chat() {
     ws.onmessage = (evt) => {
       try {
         const data = JSON.parse(evt.data);
-        // Backend broadcast: { role, content, tool_calls, metadata }
         const enriched = {
           id: `live-${Date.now()}-${Math.random().toString(36).slice(2)}`,
           role: data.role || "system",
           content: data.content || "",
-          created_at: new Date().toISOString(),
+          user_id: data.user_id || null,
+          username: data.username || null,
+          created_at: data.created_at || new Date().toISOString(),
         };
         setMessages((prev) => [...prev, enriched]);
       } catch {
@@ -192,15 +193,20 @@ export default function Chat() {
                       <div className={bubbleClass(m.role)}>
                         <div className="bubble-meta">
                           <span className="name">
-                            {m.role === "user" ? (user?.username || "You") : "Assistant"}
+                            {m.user_id === user?.id
+                              ? "You"
+                              : m.username || "Participant"}
                           </span>
+
                           <span className="time">{prettyTime(m.created_at)}</span>
                         </div>
                         <div className="bubble-text">{m.content}</div>
                       </div>
                       {m.role === "user" && (
                         <div className="avatar user">
-                          {user?.username?.[0]?.toUpperCase() || "U"}
+                          {m.user_id === user?.id
+                            ? (user?.username?.[0]?.toUpperCase() || "U")
+                            : (m.username?.[0]?.toUpperCase() || "P")}
                         </div>
                       )}
                     </div>

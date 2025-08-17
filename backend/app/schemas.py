@@ -109,6 +109,8 @@ class MessageOut(ORMBase):
     tool_calls: Optional[List[Dict[str, Any]]] = None
     tool_metadata: Optional[Dict[str, Any]] = None  # renamed
     created_at: datetime
+    
+    
 # ============================================================
 # Participant Schemas
 # ============================================================
