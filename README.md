@@ -1,7 +1,5 @@
 # Project Title
-
-A brief description of your project. One or two sentences summarizing the purpose and scope.
-
+Real Time Chat Application
 ---
 
 ## Table of Contents
@@ -17,43 +15,48 @@ A brief description of your project. One or two sentences summarizing the purpos
 ---
 
 ## Overview
-Explain the motivation and problem statement of the project. Describe what your solution does and how it can be useful. Keep it short and clear.
+This project is a full-stack chat application designed to provide users with a secure and seamless messaging experience. The system is built on a **FastAPI** backend with a **React** frontend, and it integrates a **PostgreSQL** database for persistent storage. The Backend application is Dockerized, allowing easy setup and deployment with **Docker** and Docker Compose.
 
+The backend handles user authentication with **JWT**, session management, and real-time messaging via **WebSockets**. It also exposes a set of REST API endpoints that allow users to create, update, and manage chat sessions. Database migrations are managed with Alembic to ensure smooth schema evolution.
+
+On the frontend, the application delivers a clean and user-friendly interface where users can register, log in, view active chat sessions, and communicate instantly. Authentication and flash messages are managed through React Context to provide a consistent user experience across the application.
 ---
 
 ## Technologies Used
-List the major technologies, frameworks, and tools you used. For example:
 
-- **Frontend:** React, Tailwind CSS  
-- **Backend:** FastAPI, Node.js, Express  
-- **Database:** PostgreSQL, MongoDB  
-- **Other:** Docker, GitHub Actions, Redis  
+- **Frontend:** React, CSS  
+- **Backend:** FastAPI: Alembic  
+- **Database:** PostgreSQL  
+- **Other:** Docker 
 
 ---
 
 ## Features
-Summarize the main functionalities implemented:
 
-- User authentication and authorization  
-- Data visualization with charts  
-- RESTful API integration  
-- Real-time updates  
-- Search and filter functionality  
-
+- **User Authentication:** Secure registration and login using JWT-based authentication.
+- **User Management:** Save and manage user data in PostgreSQL.
+- **Chat Sessions:** Create, update, and delete chat sessions via REST API endpoints.
+- **Real-time Messaging:** Exchange messages instantly using WebSockets.
+- **Frontend Interface:** Clean and intuitive React UI for managing sessions and sending messages,chat invites.
+- **State Management:** Use of React Context for authentication and flash messages.
+- **Database Migrations:** Managed with Alembic to handle schema changes.
+- **Docker Support:** Easily run and deploy the application using Docker and Docker Compose.
 ---
 
 ## Installation
-Step-by-step instructions for running the project locally:
+
+The application can be run easily using Docker and Docker Compose. Follow these steps:
 
 ```bash
 # Clone the repository
-git clone https://github.com/username/repository-name.git
+git clone https://github.com/MeetModi24/Chat-Application.git
 
 # Navigate to the project folder
-cd repository-name
+cd Chat-Application
 
-# Install dependencies
-npm install   # or pip install -r requirements.txt
+# Build and start the containers
+docker-compose up --build
 
-# Run the project
-npm start     # or uvicorn main:app --reload
+# The backend will typically run on http://localhost:8000
+# The frontend will typically run on http://localhost:3000
+# API endpoints can be accessed via: http://localhost:8000/docs#/
