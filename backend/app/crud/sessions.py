@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 
 from .. import models
+from sqlalchemy import or_
 
 # ============================================================
 # Participants CRUD
@@ -138,46 +139,46 @@ def delete_session(db: Session, chat_session: models.ChatSession) -> None:
 def _invite_token() -> str:
     return secrets.token_urlsafe(32)
 
+def get_user_by_email(db: Session, email: str) -> Optional[models.User]:
+    return db.query(models.User).filter(models.User.email == email).first()
 
-def create_invites(
+def create_invite(
     db: Session,
     session_id: uuid.UUID,
-    emails: List[str],
+    email: str,
     created_by: uuid.UUID,
     expires_in_hours: Optional[int] = 72,
-) -> List[models.ChatInvite]:
-    """Create invites for given emails, skipping existing active ones"""
+) -> Optional[models.ChatInvite]:
+    """Create a single invite for given email, skipping existing active one"""
+    email = email.lower().strip()
+
+    # Check if active invite already exists
+    existing = db.query(models.ChatInvite).filter(
+        models.ChatInvite.session_id == session_id,
+        models.ChatInvite.email == email,
+        models.ChatInvite.revoked == False
+    ).first()
+
+    if existing:
+        return None
+
     expires_at = (
         datetime.now(timezone.utc) + timedelta(hours=expires_in_hours)
         if expires_in_hours else None
     )
-    out = []
 
-    existing = {
-        i.email.lower() for i in db.query(models.ChatInvite)
-        .filter(models.ChatInvite.session_id == session_id,
-                models.ChatInvite.revoked == False)
-        .all()
-    }
+    inv = models.ChatInvite(
+        session_id=session_id,
+        email=email,
+        token=_invite_token(),
+        expires_at=expires_at,
+        created_by_user_id=created_by,
+    )
 
-    for email in emails:
-        email = email.lower().strip()
-        if email in existing:
-            continue
-        inv = models.ChatInvite(
-            session_id=session_id,
-            email=email,
-            token=_invite_token(),
-            expires_at=expires_at,
-            created_by_user_id=created_by,
-        )
-        db.add(inv)
-        out.append(inv)
-
+    db.add(inv)
     db.commit()
-    for inv in out:
-        db.refresh(inv)
-    return out
+    db.refresh(inv)
+    return inv
 
 
 def get_invite_by_token(db: Session, token: str) -> Optional[models.ChatInvite]:
@@ -216,3 +217,19 @@ def revoke_invite(db: Session, invite_id: uuid.UUID, session_id: uuid.UUID):
         db.commit()
         db.refresh(inv)
     return inv
+
+def list_user_invites(db: Session, email: str) -> List[models.ChatInvite]:
+    return (
+        db.query(models.ChatInvite)
+        .filter(
+            models.ChatInvite.email == email,
+            models.ChatInvite.revoked.is_(False),
+            models.ChatInvite.accepted_at.is_(None),
+            or_(
+                models.ChatInvite.expires_at.is_(None),
+                models.ChatInvite.expires_at > datetime.now(timezone.utc)
+            )
+        )
+
+        .all()
+    )

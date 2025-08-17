@@ -130,7 +130,7 @@ class SessionParticipantCreate(BaseModel):
 # ============================================================
 
 class InviteCreate(BaseModel):
-    email: EmailStr   # ✅ fixed plural -> singular
+    email: EmailStr   
     expires_in_hours: Optional[int] = Field(
         default=72, ge=1, le=720
     )  # allow None for "no expiry"
